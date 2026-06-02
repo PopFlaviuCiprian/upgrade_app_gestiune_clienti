@@ -35,6 +35,7 @@ import re
 import win32com.client
 import string
 from docx.shared import Inches
+import unicodedata
 
 
 """
@@ -547,10 +548,31 @@ def trimite_backup_email(backup_path, destinatar):
 # -------------------------
 # Normalizare nume firma
 # -------------------------
+
+
 def normalize_nume_firma(nume):
     if not nume:
         return ""
 
+    # Eliminare diacritice
+    traducere = str.maketrans({
+        "ă": "a",
+        "â": "a",
+        "î": "i",
+        "ș": "s",
+        "ş": "s",
+        "ț": "t",
+        "ţ": "t",
+        "Ă": "A",
+        "Â": "A",
+        "Î": "I",
+        "Ș": "S",
+        "Ş": "S",
+        "Ț": "T",
+        "Ţ": "T"
+    })
+
+    nume = nume.translate(traducere)
     nume = nume.strip().lower()
 
     replacements = {
@@ -2808,7 +2830,7 @@ def genereaza_declaratie():
 
         # Presupunem coloanele: 0=Nr_Crt client, 1=Serie_Amef, 2=Model, ...
         id_client = valori[0]
-        serie_amef = str(valori[12]).strip() # coloana serie amef din treeview
+        serie_amef = str(valori[13]).strip() # coloana serie amef din treeview
 
         # Preluare date din DB
         client = get_date_client(id_client)
@@ -3010,7 +3032,7 @@ def genereaza_pv_defiscalizare():
 
         # Presupunem coloanele: 0=Nr_Crt client, 1=Serie_Amef, 2=Model, ...
         id_client = valori[0]
-        serie_amef = str(valori[12]).strip() # coloana serie amef din treeview
+        serie_amef = str(valori[13]).strip() # coloana serie amef din treeview
 
         # Preluare date din DB
         client = get_date_client(id_client)
@@ -3185,6 +3207,175 @@ def genereaza_pv_defiscalizare():
 
 # Final functie generare pv defiscalizare din template
 
+
+# Inceput functie pentru generare document de predare acte amef catre client
+def genereaza_pv_predare_acte():
+    progress = None
+    progress_win = None
+    try:
+        # --- Selectie rând din Treeview ---
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("Selectează client/serie", "Selectează un rând.")
+            return
+
+        item = tree.item(selected[0])
+        valori = item["values"]
+
+        # Presupunem coloanele: 0=Nr_Crt client, 1=Serie_Amef, 2=Model, ...
+        id_client = valori[0]
+        serie_amef = str(valori[13]).strip() # coloana serie amef din treeview
+
+        # Preluare date din DB
+        client = get_date_client(id_client)
+        amef = get_amef_client(id_client, serie_amef)
+
+        if not client or not amef:
+            messagebox.showerror("Eroare", "Nu s-au găsit date pentru client/serie selectata.")
+            return
+        nume_firma = nume_fisier_valid(client["Nume_Firma"])
+
+        # Mapare amef
+        model_db = amef["Model_Amef"].strip().upper()
+
+        data_azi = datetime.today().strftime("%d.%m.%Y")
+
+        tehnicieni_excel = citeste_excel_tehnicieni()
+
+        nume_tehnician = amef.get("Tehnician", "").strip().upper()
+
+        tehnicieni_excel_norm = {k.strip().upper(): v for k, v in tehnicieni_excel.items()}
+
+        semnatura_tehnician = ""
+
+        if nume_tehnician in tehnicieni_excel_norm:
+            semnatura_tehnician = tehnicieni_excel_norm[nume_tehnician].get("SEMNATURA", "")
+        else:
+            print(f"Tehnician {nume_tehnician} nu a fost găsit în Excel")
+
+
+        # --- Dicționar pentru template ---
+        date = {
+            "{Administrator}": client["Administrator"],
+            "{Nume_Firma}": client["Nume_Firma"],
+            "{Sediu_Social}": client["Sediu_Social"],
+            "{Cui}": client["Cui"],
+            "{Nr_Telefon}": client["Nr_Telefon"],
+            "{Punct_Lucru}": amef["Punct_Lucru"],
+            "{Serie_Amef}": amef["Serie_Amef"],
+            "{Model_Amef}": amef["Model_Amef"],
+            "{Nui}": amef["Nui"],
+            "{Data}": data_azi,
+        }
+
+        def replace_text_in_paragraph(paragraph, data):
+
+            full_text = "".join(run.text for run in paragraph.runs)
+
+            replaced = False
+
+            for key, value in data.items():
+                if key in full_text:
+                    full_text = full_text.replace(key, str(value))
+                    replaced = True
+
+            if replaced:
+                for run in paragraph.runs:
+                    run.text = ""
+
+                paragraph.runs[0].text = full_text
+
+        # --- Înlocuire placeholder în paragrafe și tabele ---
+        doc = Document(resource_path("template/pv_docs_amef.docx"))
+        # Paragrafe
+        for p in doc.paragraphs:
+            replace_text_in_paragraph(p, date)
+
+
+        # -------------------------
+        # Tabele
+        # -------------------------
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        replace_text_in_paragraph(p, date)
+
+        insereaza_semnatura(doc, semnatura_tehnician)
+
+
+        # --- Dialog pentru a alege calea de salvare ---
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".docx",
+            filetypes=[("Document Word", "*.docx")],
+            initialfile=f"Confirmare_CI_{nume_firma}_{id_client}_{serie_amef}.docx",
+            title="Salvează confirmare predare CI"
+        )
+
+        if not file_path:  # utilizatorul a apasat Cancel
+            return
+
+        progress_win = tk.Toplevel(root)
+        progress_win.title("Se generează...")
+        progress_win.geometry("300x80")
+        progress_win.resizable(False, False)
+
+        label = tk.Label(
+            progress_win,
+            text="Se generează pv predare..."
+        )
+        label.pack(pady=5)
+
+        progress = ttk.Progressbar(
+            progress_win,
+            mode="indeterminate"
+        )
+
+        progress.pack(pady=5, padx=10, fill="x")
+
+        progress.start()
+        progress_win.update()
+
+        # --- Salvare docx ---
+        doc.save(file_path)
+
+        # --- Optional: convertire PDF dacă ai funcția convert ---
+        pdf_path = file_path.replace(".docx", ".pdf")
+        try:
+            convert_docx_to_pdf(file_path, pdf_path)
+            if os.path.exists(pdf_path):
+                messagebox.showinfo(
+                    "Succes",
+                    "Confirmarea a fost generata in PDF si Doc"
+                )
+            else:
+                messagebox.showwarning(
+                    "PDF",
+                    "DOCX creat, PDF nu"
+                )
+
+        except Exception as e:
+            messagebox.showerror(
+                "Eroare PDF",
+                str(e)
+            )
+
+        except Exception as e:
+            messagebox.showerror(
+                "Eroare generală",
+                str(e)
+            )
+
+    finally:
+        if progress:
+            progress.stop()
+            progress.destroy()
+        if progress_win:
+            progress_win.destroy()
+
+# Final functie generere document predare acte amef catre client
+
+
 """
 Functie pentru generare fisa reparatie
 """
@@ -3203,7 +3394,7 @@ def genereaza_fisa_reparatie():
 
         # Presupunem coloanele: 0=Nr_Crt client, 1=Serie_Amef, 2=Model, ...
         id_client = valori[0]
-        serie_amef = str(valori[12]).strip() # coloana serie amef din treeview
+        serie_amef = str(valori[13]).strip() # coloana serie amef din treeview
 
         # Preluare date din DB
         client = get_date_client(id_client)
@@ -3354,6 +3545,7 @@ def genereaza_fisa_reparatie():
 
 # Final functie generare fisa reparatie
 
+
 """
 Functie pentru generarea dosarului de asistenta tehnica
 Un fel de carte interventie digitala
@@ -3373,7 +3565,7 @@ def genereaza_dosar_asistenta():
 
         # Presupunem coloanele: 0=Nr_Crt client, 1=Serie_Amef, 2=Model, ...
         id_client = valori[0]
-        serie_amef = str(valori[12]).strip()  # coloana serie amef din treeview
+        serie_amef = str(valori[13]).strip()  # coloana serie amef din treeview
 
         # Preluare date din DB
         client = get_date_client(id_client)
@@ -3908,7 +4100,7 @@ btn_params = [
     ("Genereaza DI", lambda: genereaza_declaratie(), "#d9ead3", "Generează declarație de instalare PDF"),
     ("Genereaza PV", lambda: genereaza_pv_defiscalizare(), "#d9ead3", "Generează PV defiscalizare in PDF"),
     ("Fisa Service", lambda: genereaza_fisa_reparatie(), "#d9ead3", "Generează fisa reparatie in PDF"),
-    ("Confirmare CI", lambda: genereaza_fisa_reparatie(), "#d9ead3", "Confirmare primire documente AMEF"), # Modifica pentru formular carte interventie
+    ("Confirmare CI", lambda: genereaza_pv_predare_acte(), "#d9ead3", "Confirmare primire documente AMEF"), # Modifica pentru formular carte interventie
     # ("Fișă intervenție", lambda: genereaza_document("fisa_interventie"), "#cfe2f3", "Generează fișă de service PDF"),
     # ("Contract service", lambda: genereaza_document("contract_service"), "#ead1dc", "Generează contract de service PDF"),
 ]
