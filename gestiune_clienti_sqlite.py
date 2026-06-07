@@ -2245,8 +2245,8 @@ def buton_prelungire_3_luni():
     row = tree.item(selected[0], "values")
 
     id_client = row[0]
-    serie_amef = row[12]
-    data_exp_service = row[16]
+    serie_amef = row[13]
+    data_exp_service = row[17]
     # luăm id_sediu real
     conn = conectare_db()
     cursor = conn.cursor()
@@ -2376,9 +2376,9 @@ def la_double_click(event):
     row = tree.item(selected[0], "values")
 
     id_client = row[0]  # Nr_Crt client
-    serie_amef = row[12]  # Serie AMEF
-    data_exp_abon = row[16]  # Data expirare service
-    data_exp_gprs = row[19]  # Data expirare gprs
+    serie_amef = row[13]  # Serie AMEF
+    data_exp_abon = row[17]  # Data expirare service
+    data_exp_gprs = row[20]  # Data expirare gprs
 
     # luăm id_sediu real
     conn = conectare_db()
