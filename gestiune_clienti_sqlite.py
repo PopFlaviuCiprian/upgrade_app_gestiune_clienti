@@ -3813,6 +3813,31 @@ def creeaza_legenda_status(parent):
 # User Interface setup
 # =========================
 root = tk.Tk()
+
+# modificare
+main_paned = tk.PanedWindow(
+    root,
+    orient=tk.VERTICAL,
+    sashwidth=8,
+    sashrelief="raised"
+)
+
+main_paned.pack(fill="both", expand=True)
+
+# partea de sus
+frame_top = tk.Frame(main_paned)
+
+# partea de jos
+frame_bottom = tk.Frame(main_paned)
+
+main_paned.add(frame_top, minsize=250)
+main_paned.add(frame_bottom, minsize=250)
+
+frame_top.grid_columnconfigure(0, weight=1)
+frame_top.grid_columnconfigure(1, weight=1)
+frame_top.grid_rowconfigure(0, weight=1)
+# sfarsit modificare
+
 root.title("Gestionare Client și Sediu")
 root.geometry("1400x700")
 
@@ -3843,7 +3868,20 @@ color_sediu = "#f9f1d0"
 # -------------------------
 # FRAME CLIENT (stânga)
 # -------------------------
-frame_client = tk.LabelFrame(root, text="Date Client", bg=color_client, padx=10, pady=10, font=("Arial", 12, "bold"))
+#frame_client = tk.LabelFrame(root, text="Date Client", bg=color_client, padx=10, pady=10, font=("Arial", 12, "bold"))
+
+# modificare
+frame_client = tk.LabelFrame(
+    frame_top,
+    text="Date Client",
+    bg=color_client,
+    padx=10,
+    pady=10,
+    font=("Arial", 12, "bold")
+)
+# sfarsit modificare
+
+
 frame_client.grid(row=0, column=0, sticky="nsew", padx=10, pady=5)
 
 client_labels = ["CUI Client", "Nume firmă", "Adresă sediu", "Registrul Comertului",
@@ -3902,8 +3940,19 @@ entry_nui_var = tk.StringVar()
 # -------------------------
 # FRAME PUNCT LUCRU/AMEF (dreapta)
 # -------------------------
-frame_sediu = tk.LabelFrame(root, text="Sediu Secundar / AMEF", bg=color_sediu, padx=10, pady=10,
-                            font=("Arial", 12, "bold"))
+#frame_sediu = tk.LabelFrame(root, text="Sediu Secundar / AMEF", bg=color_sediu, padx=10, pady=10,font=("Arial", 12, "bold"))
+
+# modificare
+frame_sediu = tk.LabelFrame(
+    frame_top,
+    text="Sediu Secundar / AMEF",
+    bg=color_sediu,
+    padx=10,
+    pady=10,
+    font=("Arial", 12, "bold")
+)
+# sfarsit modificare
+
 frame_sediu.grid(row=0, column=1, sticky="nsew", padx=10, pady=5)
 
 sediu_labels = ["Punct de lucru", "Status punct lucru", "Model Amef", "Serie Amef", "Nui Amef",
@@ -4106,7 +4155,10 @@ class ToolTip:
             self.tip_window = None
 
 
-frame_butoane = tk.Frame(root)
+#frame_butoane = tk.Frame(root)
+
+frame_butoane = tk.Frame(frame_top)
+
 frame_butoane.grid(row=1, column=0, columnspan=3, pady=10)
 
 # Frame pentru legenda culori
@@ -4155,8 +4207,20 @@ for i, (text, cmd, color, descriere) in enumerate(btn_params):
 # -------------------------
 # FRAME TREE + SEARCH (sub butoane)
 # -------------------------
-frame_tree = tk.Frame(root)
-frame_tree.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=10, pady=5)
+#frame_tree = tk.Frame(root)
+
+# modificare
+frame_tree = tk.Frame(frame_bottom)
+# sfarsit modificare
+
+#frame_tree.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=10, pady=5)
+
+frame_tree.pack(
+    fill="both",
+    expand=True,
+    padx=10,
+    pady=5
+)
 
 # Mutăm câmpul de căutare aici și facem entry-ul mai mare
 search_frame = tk.Frame(frame_tree)
@@ -4254,17 +4318,34 @@ def show_menu(event):
 
 tree.bind("<Button-3>", show_menu)  # Button-3 = click dreapta pentru copiere
 
-# CONFIGURARE GRID ROOT
-root.grid_rowconfigure(3, weight=1)
-root.grid_columnconfigure(0, weight=1)
-root.grid_columnconfigure(1, weight=1)
+# # CONFIGURARE GRID ROOT
+# root.grid_rowconfigure(3, weight=1)
+# root.grid_columnconfigure(0, weight=1)
+# root.grid_columnconfigure(1, weight=1)
+
+frame_top.grid_columnconfigure(0, weight=1)
+frame_top.grid_columnconfigure(1, weight=1)
+frame_top.grid_rowconfigure(0, weight=1)
 
 # --- POP-UP ALERTĂ ABONAMENTE ---
 # root.after(100, alerta_abonamente_color)  # rulează pop-up-ul automat după ce UI-ul principal e gata
 
 footer = tk.Label(root, text="Designed by Pop Ciprian, © 2026 - Copywrite Edition",
                   font=("Arial", 8, "italic"), fg="gray")
-footer.grid(row=4, column=0, columnspan=2, sticky="e", padx=10, pady=5)
+#footer.grid(row=4, column=0, columnspan=2, sticky="e", padx=10, pady=5)
+
+footer.pack(
+    anchor="e",
+    padx=10,
+    pady=5
+)
+
+footer = tk.Label(
+    frame_bottom,
+    text="Designed by Pop Ciprian, © 2026 - Copywrite Edition",
+    font=("Arial", 8, "italic"),
+    fg="gray"
+)
 
 root.mainloop()
 
