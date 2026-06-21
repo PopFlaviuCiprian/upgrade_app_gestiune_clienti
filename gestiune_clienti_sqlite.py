@@ -36,6 +36,7 @@ import win32com.client
 import string
 from docx.shared import Inches
 import unicodedata
+import subprocess
 
 
 """
@@ -2987,6 +2988,12 @@ def genereaza_declaratie():
                     "Succes",
                     "Declaratia a fost generata in PDF si Doc"
                 )
+
+                # deschide folderul si selecteaza PDF-ul
+                subprocess.Popen(
+                    f'explorer /select,"{os.path.normpath(pdf_path)}"'
+                )
+
             else:
                 messagebox.showwarning(
                     "PDF",
@@ -3176,11 +3183,18 @@ def genereaza_pv_defiscalizare():
                     "Succes",
                     "PV defiscalizare generatat cu succes in PDF si Doc"
                 )
+
+                # deschide folderul si selecteaza PDF-ul
+                subprocess.Popen(
+                    f'explorer /select,"{os.path.normpath(pdf_path)}"'
+                )
+
             else:
                 messagebox.showwarning(
                     "PDF",
                     "DOCX creat, PDF nu"
                 )
+
         # try:
         #     os.system("taskkill /f /im WINWORD.EXE >nul 2>&1")
 
@@ -3348,6 +3362,12 @@ def genereaza_pv_predare_acte():
                     "Succes",
                     "Confirmarea a fost generata in PDF si Doc"
                 )
+
+                # deschide folderul si selecteaza PDF-ul
+                subprocess.Popen(
+                    f'explorer /select,"{os.path.normpath(pdf_path)}"'
+                )
+
             else:
                 messagebox.showwarning(
                     "PDF",
@@ -3518,6 +3538,12 @@ def genereaza_fisa_reparatie():
                     "Succes",
                     "Fisa Service fost generata in PDF si Doc"
                 )
+
+                # deschide folderul si selecteaza PDF-ul
+                subprocess.Popen(
+                    f'explorer /select,"{os.path.normpath(pdf_path)}"'
+                )
+
             else:
                 messagebox.showwarning(
                     "PDF",
@@ -3721,6 +3747,12 @@ def genereaza_dosar_asistenta():
                     "Succes",
                     "Dosarul de asistenta a fost generat in PDF si Doc"
                 )
+
+                # deschide folderul si selecteaza PDF-ul
+                subprocess.Popen(
+                    f'explorer /select,"{os.path.normpath(pdf_path)}"'
+                )
+
             else:
                 messagebox.showwarning(
                     "PDF",
@@ -3951,8 +3983,9 @@ for i, label in enumerate(sediu_labels):
             frame_sediu,
             values=[
                 "ACTIV",
-                "DEFISCALIZAT",
-                "RADIAT"
+                "DEFISCALIZAT-AMEF LA CLIENT",
+                "DEFISCALZAT-RADIAT-PRELUAT SD",
+                "LA CLIENT-FARA DEFISCALIZARE"
             ],
             state="readonly",
             width=37
