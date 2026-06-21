@@ -3830,8 +3830,8 @@ frame_top = tk.Frame(main_paned)
 # partea de jos
 frame_bottom = tk.Frame(main_paned)
 
-main_paned.add(frame_top, minsize=250)
-main_paned.add(frame_bottom, minsize=250)
+main_paned.add(frame_top, minsize=150) # aici marim ferestrele , daca vreau sa vad mai multi clienti in treeview
+main_paned.add(frame_bottom, minsize=150)
 
 frame_top.grid_columnconfigure(0, weight=1)
 frame_top.grid_columnconfigure(1, weight=1)
